@@ -1,0 +1,37 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/messages_header">
+        <SwitchPreferenceCompat
+            app:key="show_notifications"
+            app:title="@string/notification_title"
+            app:summary="Show a notification whenever a new clipboard item is received"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/sync_header">
+
+        <SwitchPreferenceCompat
+            app:key="sync"
+            app:title="@string/sync_title"
+            app:summary="Automatically save received items in the local clipboard"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/history_header">
+
+        <SwitchPreferenceCompat
+            app:key="use_history"
+            app:title="@string/history_title"
+            app:summary="Save every clipboard item in the clipboard history"/>
+
+        <EditTextPreference
+            app:dependency="use_history"
+            app:key="history_size"
+            app:defaultValue="5"
+            app:summaryOff="@string/attachment_summary_off"
+            app:summaryOn="@string/attachment_summary_on"
+            app:title="@string/history_size_tile" />    <!--Impossible to do with XML https://stackoverflow.com/questions/13425338/how-to-set-only-numeric-value-for-edittextpreference-in-android-->
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
