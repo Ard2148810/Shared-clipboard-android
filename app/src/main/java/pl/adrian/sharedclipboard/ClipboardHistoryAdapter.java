@@ -1,5 +1,6 @@
 package pl.adrian.sharedclipboard;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,10 +17,10 @@ import java.util.List;
 
 public class ClipboardHistoryAdapter extends RecyclerView.Adapter<ClipboardHistoryAdapter.ViewHolder> {
     private List<String> historyItems;
-    private FirstFragment fragment;
+    private MainActivity activity;
 
-    public ClipboardHistoryAdapter(FirstFragment fragment) {
-        this.fragment = fragment;
+    public ClipboardHistoryAdapter(MainActivity activity) {
+        this.activity = activity;
     }
 
     @NonNull
@@ -38,8 +39,7 @@ public class ClipboardHistoryAdapter extends RecyclerView.Adapter<ClipboardHisto
             Toast.makeText(context, item, Toast.LENGTH_SHORT).show();
         });
         holder.itemBtn.setOnClickListener(view -> {
-            historyItems.remove(position);
-            notifyDataSetChanged();
+            activity.removeItemFromClipboardHistory(position);
         });
     }
 
