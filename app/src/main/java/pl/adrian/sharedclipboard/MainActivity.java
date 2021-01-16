@@ -9,12 +9,17 @@ import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.neovisionaries.ws.client.WebSocket;
+import com.neovisionaries.ws.client.WebSocketAdapter;
+import com.neovisionaries.ws.client.WebSocketException;
+import com.neovisionaries.ws.client.WebSocketFactory;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.View;
 
 import android.view.Menu;
@@ -33,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView historyItemsRecyclerView;
     private ClipboardHistoryAdapter clipboardHistoryAdapter;
     private List<String> clipboardHistoryList;
+
+    private WebSocket ws;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +66,19 @@ public class MainActivity extends AppCompatActivity {
         historyItemsRecyclerView.setAdapter(clipboardHistoryAdapter);
 
         initClipboardHistory();
+        initWebSocket();
 
+    }
+
+    private void initWebSocket() {
+        try {
+            this.ws = new WebSocketFactory().createSocket("ws://192.168.43.206:5001");
+            this.ws.addListener(new WebSocketConnectionAdapter(this));
+            this.ws.connectAsynchronously();
+        } catch (IOException e) {
+            Log.println(Log.ERROR, "WebSocket", e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void initClipboardHistory() {
