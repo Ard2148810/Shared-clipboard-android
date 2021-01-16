@@ -6,12 +6,15 @@ import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
 
+import java.util.List;
+import java.util.Map;
+
 public class WebSocketConnectionAdapter extends WebSocketAdapter {
 
-    MainActivity activity;
+    ConnectionService service;
 
-    WebSocketConnectionAdapter(MainActivity activity) {
-        this.activity = activity;
+    WebSocketConnectionAdapter(ConnectionService service) {
+        this.service = service;
     }
 
     @Override
@@ -25,5 +28,11 @@ public class WebSocketConnectionAdapter extends WebSocketAdapter {
     @Override
     public void onConnectError(WebSocket websocket, WebSocketException exception) throws Exception {
         Log.println(Log.ERROR, "WebSocket", exception.getMessage());
+    }
+
+    @Override
+    public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
+        ConnectionStatus.setConnectionStatus(ConnectionStatus.ConnectionStatusState.CONNECTED);
+        super.onConnected(websocket, headers);
     }
 }

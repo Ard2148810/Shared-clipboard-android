@@ -3,6 +3,7 @@
     package="pl.adrian.sharedclipboard">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -11,10 +12,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SharedClipboard">
+        <service
+            android:name=".ConnectionService"
+            android:enabled="true"
+            android:exported="true"></service>
+
         <activity
             android:name=".ConnectionActivity"
-            android:parentActivityName=".MainActivity"
-            android:label="@string/title_activity_connection">
+            android:label="@string/title_activity_connection"
+            android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />

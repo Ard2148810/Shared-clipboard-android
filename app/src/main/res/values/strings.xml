@@ -31,4 +31,14 @@
     <string name="history_title">Use history</string>
     <string name="history_size_tile">Clipboard history size</string>
     <string name="title_activity_connection">Connection</string>
+
+    <string name="notification_t">Shared clipboard</string>
+    <string name="notification_message">Connected</string>
+    <string name="ticker_text">_ticker</string>
+
+    <string name="ws_connected">Connected</string>
+    <string name="ws_connecting">Connecting…</string>
+    <string name="ws_disconnected">Disconnected</string>
+    <string name="ws_paused">Paused</string>
+
 </resources>

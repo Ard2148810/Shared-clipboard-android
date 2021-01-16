@@ -4,14 +4,11 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.neovisionaries.ws.client.WebSocket;
-import com.neovisionaries.ws.client.WebSocketAdapter;
-import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFactory;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,18 +17,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
-import android.view.View;
 
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
+import android.widget.TextView;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ConnectionStatus.ConnectionStatusListener {
 
     private ClipboardManager clipboardManager;
 
@@ -39,14 +34,16 @@ public class MainActivity extends AppCompatActivity {
     private ClipboardHistoryAdapter clipboardHistoryAdapter;
     private List<String> clipboardHistoryList;
 
-    private WebSocket ws;
+    private TextView status;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
+        status = findViewById(R.id.status_value);
         setSupportActionBar(toolbar);
+        ConnectionStatus.addListener(this);
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
@@ -66,20 +63,35 @@ public class MainActivity extends AppCompatActivity {
         historyItemsRecyclerView.setAdapter(clipboardHistoryAdapter);
 
         initClipboardHistory();
-        initWebSocket();
-
+        //setConnectionStatus();
     }
 
-    private void initWebSocket() {
-        try {
-            this.ws = new WebSocketFactory().createSocket("ws://192.168.43.206:5001");
-            this.ws.addListener(new WebSocketConnectionAdapter(this));
-            this.ws.connectAsynchronously();
-        } catch (IOException e) {
-            Log.println(Log.ERROR, "WebSocket", e.getMessage());
-            e.printStackTrace();
+    @Override
+    protected void onDestroy() {
+        ConnectionStatus.removeListener(this);
+        super.onDestroy();
+    }
+
+    public void setConnectionStatus(ConnectionStatus.ConnectionStatusState state) {
+        String msg = "...";
+        switch (state) {
+            case CONNECTED:
+                msg = getString(R.string.ws_connected);
+                break;
+            case CONNECTING:
+                msg = getString(R.string.ws_connecting);
+                break;
+            case DISCONNECTED:
+                msg = getString(R.string.ws_disconnected);
+                break;
+            case PAUSED:
+                msg = getString(R.string.ws_paused);
+                break;
         }
+        this.status.setText(msg);
     }
+
+
 
     private void initClipboardHistory() {
         SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
@@ -137,4 +149,8 @@ public class MainActivity extends AppCompatActivity {
         this.clipboardHistoryAdapter.notifyDataSetChanged();
     }
 
+    @Override
+    public void statusChanged(ConnectionStatus.ConnectionStatusState state) {
+        setConnectionStatus(state);
+    }
 }
