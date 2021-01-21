@@ -7,38 +7,58 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
+
+import androidx.lifecycle.MutableLiveData;
 
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketFactory;
 
 import java.io.IOException;
 
-public class ConnectionService extends Service implements ConnectionStatus.ConnectionStatusListener {
+public class ConnectionService extends Service {
 
     private static final int NOTIFICATION_ID = 123;
     private static final String CHANNEL_ID = "ChannelID";
+    MutableLiveData<Boolean> isConnected = new MutableLiveData<>(false);
+    private final IBinder binder = new LocalBinder();
 
     private WebSocket ws;
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        System.out.println("ConnectionService: onCreate()");
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        ConnectionStatus.addListener(this);
+        System.out.println("ConnectionService: onStartCommand()");
+
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, createNotification(getString(R.string.ws_connecting)));
         initWebSocket();
-        ConnectionStatus.setConnectionStatus(ConnectionStatus.ConnectionStatusState.CONNECTING);
 
         return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public void onDestroy() {
-        ConnectionStatus.removeListener(this);
         super.onDestroy();
+        System.out.println("ConnectionService: onDestroy()");
+        if(ws != null) {
+            ws.disconnect();
+            ws = null;
+        }
     }
+
+
 
     private void createNotificationChannel() {
         // Create the NotificationChannel, but only on API 26+ because
@@ -49,8 +69,6 @@ public class ConnectionService extends Service implements ConnectionStatus.Conne
             int importance = NotificationManager.IMPORTANCE_LOW;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
@@ -58,16 +76,18 @@ public class ConnectionService extends Service implements ConnectionStatus.Conne
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return binder;
     }
 
     private void initWebSocket() {
         try {
-            this.ws = new WebSocketFactory().createSocket("ws://192.168.43.206:5001");
-            this.ws.addListener(new WebSocketConnectionAdapter(this));
-            this.ws.connectAsynchronously();
+            this.ws = new WebSocketFactory()
+                    .setConnectionTimeout(8000)
+                    .createSocket("ws://192.168.8.125:5001")
+                    .addListener(new WebSocketConnectionAdapter(this))
+                    .connectAsynchronously();
         } catch (IOException e) {
-            Log.println(Log.ERROR, "WebSocket", e.getMessage());
+            Log.e("WebSocket:CS", e.getMessage());
             e.printStackTrace();
         }
     }
@@ -98,23 +118,26 @@ public class ConnectionService extends Service implements ConnectionStatus.Conne
         return notification;
     }
 
-    @Override
-    public void statusChanged(ConnectionStatus.ConnectionStatusState state) {
-        String msg = "...";
-        switch (state) {
-            case CONNECTED:
-                msg = getString(R.string.ws_connected);
-                break;
-            case CONNECTING:
-                msg = getString(R.string.ws_connecting);
-                break;
-            case DISCONNECTED:
-                msg = getString(R.string.ws_disconnected);
-                break;
-            case PAUSED:
-                msg = getString(R.string.ws_paused);
-                break;
+    void setConnectionStatus(boolean value) {
+        System.out.println("Posting value: " + value);
+        isConnected.postValue(value);
+        if(!value) {
+            stopForeground(true);
+        } else {
+            updateNotificationText(getString(R.string.ws_connected));
         }
-        updateNotificationText(msg);
+    }
+
+    /*
+    Has to be called before the service is explicitly stopped since no method is called when it's stopped and bounded at the same time
+     */
+    void disconnectWebSocket() {
+        this.ws.disconnect();
+    }
+
+    public class LocalBinder extends Binder {
+        ConnectionService getService() {
+            return ConnectionService.this;
+        }
     }
 }

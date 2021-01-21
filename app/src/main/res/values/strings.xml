@@ -40,5 +40,10 @@
     <string name="ws_connecting">Connecting…</string>
     <string name="ws_disconnected">Disconnected</string>
     <string name="ws_paused">Paused</string>
+    <string name="btn_connection">CLICK</string>
+    <string name="status">Status:</string>
+    <string name="room_id">Room ID</string>
+    <string name="clipboard_history_items">clipboard_history_items</string>
+    <string name="preferences_file_key_history">SharedClipboard_PREFERENCES_FILE_KEY_HISTORY</string>
 
 </resources>

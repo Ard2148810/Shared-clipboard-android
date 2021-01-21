@@ -1,70 +1,119 @@
 package pl.adrian.sharedclipboard;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.LifecycleOwner;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.IBinder;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.neovisionaries.ws.client.WebSocket;
-import com.neovisionaries.ws.client.WebSocketFactory;
+import pl.adrian.sharedclipboard.ConnectionService.LocalBinder;
 
-import java.io.IOException;
-
-public class ConnectionActivity extends AppCompatActivity implements ConnectionStatus.ConnectionStatusListener {
+public class ConnectionActivity extends AppCompatActivity {
 
 
     Button btnConnect;
     TextView statusValue;
 
+    boolean isBound = false;
+    boolean isConnected = false;
+    ConnectionService connectionService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        System.out.println("ConnectionActivity: onCreate()");
+
         setContentView(R.layout.activity_connection);
-        ConnectionStatus.addListener(this);
         this.btnConnect = findViewById(R.id.btn_connect);
         this.statusValue = findViewById(R.id.connection_state);
-        updateStateText(ConnectionStatus.getConnectionStatus());
 
 
         this.btnConnect.setOnClickListener(listener -> {
-            Intent intent = new Intent(this, ConnectionService.class);
-            startService(intent);
-            statusValue.setText(getString(R.string.ws_connecting));
-            this.btnConnect.setEnabled(false);
+            if(connectionService != null) {
+                Intent intent = new Intent(this, ConnectionService.class);
+                if(!isConnected) {
+                    System.out.println("ConnectionActivity: starting service...");
+                    startService(intent);
+                    this.statusValue.setText(R.string.ws_connecting);
+                } else {
+                    System.out.println("ConnectionActivity: stopping service...");
+                    connectionService.disconnectWebSocket();
+                    stopService(intent);
+                    this.statusValue.setText(R.string.ws_disconnected);
+                }
+            }
         });
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        System.out.println("Connection Activity: onStart()");
+
+        bindConnectionService();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        System.out.println("Connection Activity: onStop()");
+
+        unbindConnectionService();
+    }
+
+    private void setConnectionStatus(boolean value) {
+        System.out.println("Setting connection status to: " + value);
+        this.isConnected = value;
+        if(value) {
+            this.statusValue.setText(R.string.ws_connected);
+        } else {
+            this.statusValue.setText(R.string.ws_disconnected);
+        }
     }
 
     @Override
     protected void onDestroy() {
-        ConnectionStatus.removeListener(this);
         super.onDestroy();
+        System.out.println("ConnectionActivity: onDestroy()");
     }
 
-    @Override
-    public void statusChanged(ConnectionStatus.ConnectionStatusState state) {
-        updateStateText(state);
+    private void bindConnectionService() {
+        Intent intent = new Intent(this, ConnectionService.class);
+        bindService(intent, serviceHandler, Context.BIND_AUTO_CREATE);
     }
 
-    private void updateStateText(ConnectionStatus.ConnectionStatusState state) {
-        String msg = "...";
-        switch (state) {
-            case CONNECTED:
-                msg = getString(R.string.ws_connected);
-                break;
-            case CONNECTING:
-                msg = getString(R.string.ws_connecting);
-                break;
-            case DISCONNECTED:
-                msg = getString(R.string.ws_disconnected);
-                break;
-            case PAUSED:
-                msg = getString(R.string.ws_paused);
-                break;
+    private void unbindConnectionService() {
+        unbindService(serviceHandler);
+        isBound = false;
+    }
+
+    public void getStatus() {
+        connectionService.isConnected.observe(this, this::setConnectionStatus);
+    }
+
+    private ServiceConnection serviceHandler = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            LocalBinder binder = (LocalBinder) service;
+            connectionService = binder.getService();
+            isBound = true;
+            getStatus();
         }
-        this.statusValue.setText(msg);
-    }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false;
+        }
+
+    };
+
 }
