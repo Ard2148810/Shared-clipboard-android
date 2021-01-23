@@ -18,7 +18,7 @@ public class SharedPrefManager {
         String jsonString = gson.toJson(list);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(listKey, jsonString);
-        editor.apply();
+        editor.commit();
     }
 
     public static List<String> read(String listKey, Context context, String preferencesFileKey) {

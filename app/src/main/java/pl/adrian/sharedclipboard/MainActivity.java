@@ -5,13 +5,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
-import com.neovisionaries.ws.client.WebSocket;
-import com.neovisionaries.ws.client.WebSocketFactory;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -19,13 +16,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.IBinder;
-import android.util.Log;
 
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +41,8 @@ public class MainActivity extends AppCompatActivity  {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        System.out.println("MainActivity: OnCreate()");
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         status = findViewById(R.id.status_value);
@@ -60,15 +57,17 @@ public class MainActivity extends AppCompatActivity  {
             startActivity(intent);
         });
 
-        clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        clipboardManager.addPrimaryClipChangedListener(this::onClipboardChanged);
 
         historyItemsRecyclerView = findViewById(R.id.clipboardHistoryRecyclerView);
         historyItemsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         clipboardHistoryAdapter = new ClipboardHistoryAdapter(this);
         historyItemsRecyclerView.setAdapter(clipboardHistoryAdapter);
+    }
 
-        initClipboardHistory();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        System.out.println("MainActivity: onDestroy()");
     }
 
     @Override
@@ -76,6 +75,7 @@ public class MainActivity extends AppCompatActivity  {
         super.onStart();
         System.out.println("Main Activity: onStart()");
 
+        updateClipboardHistory();
         bindConnectionService();
     }
 
@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
-    private void initClipboardHistory() {
+    private void updateClipboardHistory() {
         List<String> items = SharedPrefManager.read(getString(R.string.clipboard_history_items), this, getString(R.string.preferences_file_key_history));
         if(items != null) {
             this.clipboardHistoryList = new ArrayList<>(items);
@@ -115,29 +115,6 @@ public class MainActivity extends AppCompatActivity  {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    public void onClipboardChanged() {
-        addItemToClipboardHistory(getFromClipboard());
-    }
-
-    public String getFromClipboard() {
-        return clipboardManager
-                .getPrimaryClip()
-                .getItemAt(0)
-                .getText()
-                .toString();
-    }
-
-    public void addItemToClipboardHistory(String text) {
-        this.clipboardHistoryList.add(0, text);
-        SharedPrefManager.save(
-                "clipboard_history_items",
-                this.clipboardHistoryList,
-                this,
-                getString(R.string.preferences_file_key_history)
-        );
-        this.clipboardHistoryAdapter.notifyDataSetChanged();
     }
 
     public void removeItemFromClipboardHistory(int position) {
@@ -169,8 +146,16 @@ public class MainActivity extends AppCompatActivity  {
         }
     }
 
+    private void onMessageChanged(Message newMessage) {
+        updateClipboardHistory();
+    }
+
     public void getStatus() {
         connectionService.isConnected.observe(this, this::setConnectionStatus);
+    }
+
+    private void getMessage() {
+        connectionService.message.observe(this, this::onMessageChanged);
     }
 
     private ServiceConnection serviceHandler = new ServiceConnection() {
@@ -181,6 +166,7 @@ public class MainActivity extends AppCompatActivity  {
             connectionService = binder.getService();
             isBound = true;
             getStatus();
+            getMessage();
         }
 
         @Override
@@ -189,4 +175,6 @@ public class MainActivity extends AppCompatActivity  {
         }
 
     };
+
+
 }

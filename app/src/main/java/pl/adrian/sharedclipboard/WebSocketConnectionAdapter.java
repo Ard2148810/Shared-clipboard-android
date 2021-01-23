@@ -1,5 +1,8 @@
 package pl.adrian.sharedclipboard;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -17,9 +20,11 @@ import java.util.Map;
 public class WebSocketConnectionAdapter extends WebSocketAdapter {
 
     ConnectionService service;
+    ClipboardManager clipboardManager;
 
     WebSocketConnectionAdapter(ConnectionService service) {
         this.service = service;
+        this.clipboardManager = (ClipboardManager) service.getSystemService(Context.CLIPBOARD_SERVICE);
     }
 
     @Override
@@ -29,7 +34,7 @@ public class WebSocketConnectionAdapter extends WebSocketAdapter {
                 "WebSocket",
                 "Message: " + text + " | ws: " + websocket.toString());
 
-        SharedPrefManager.addItem(service.getString(R.string.clipboard_history_items), readTextMessage(text), service, service.getString(R.string.preferences_file_key_history));
+        saveTextToClipboard(readTextMessage(text));
     }
 
     @Override
@@ -64,6 +69,12 @@ public class WebSocketConnectionAdapter extends WebSocketAdapter {
     public String readTextMessage(String json) {
         Gson gson = new Gson();
         Message msg = gson.fromJson(json, Message.class);
-        return msg.content;
+        return msg.getContent();
+    }
+
+    public void saveTextToClipboard(String text) {
+        ClipData clip = ClipData.newPlainText(service.getString(R.string.clipboard_item_from_server), text);
+        clipboardManager.setPrimaryClip(clip);
+        service.clipIsSetByServer(text);
     }
 }

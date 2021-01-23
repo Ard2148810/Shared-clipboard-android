@@ -5,6 +5,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
@@ -17,6 +19,7 @@ import android.widget.Toast;
 
 import androidx.lifecycle.MutableLiveData;
 
+import com.google.gson.Gson;
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketFactory;
 
@@ -27,7 +30,10 @@ public class ConnectionService extends Service {
     private static final int NOTIFICATION_ID = 123;
     private static final String CHANNEL_ID = "ChannelID";
     MutableLiveData<Boolean> isConnected = new MutableLiveData<>(false);
+    MutableLiveData<Message> message = new MutableLiveData<>();
     private final IBinder binder = new LocalBinder();
+    private ClipboardManager clipboardManager;
+    private ClipboardListener listener;
 
     private WebSocket ws;
 
@@ -44,6 +50,10 @@ public class ConnectionService extends Service {
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, createNotification(getString(R.string.ws_connecting)));
         initWebSocket();
+
+        listener = new ClipboardListener(this);
+        clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        clipboardManager.addPrimaryClipChangedListener(listener);
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -92,6 +102,14 @@ public class ConnectionService extends Service {
         }
     }
 
+    public void sendTextMessage(String message) {
+        Message msg = new Message("text", message);
+        String jsonMsg = new Gson().toJson(msg);
+        if(isConnected.getValue()) {
+            this.ws.sendText(jsonMsg);
+        }
+    }
+
 
     private void updateNotificationText(String text) {
         Notification notification = createNotification(text);
@@ -123,21 +141,72 @@ public class ConnectionService extends Service {
         isConnected.postValue(value);
         if(!value) {
             stopForeground(true);
+            if(clipboardManager != null) {
+                clipboardManager.removePrimaryClipChangedListener(listener);
+            }
         } else {
             updateNotificationText(getString(R.string.ws_connected));
         }
     }
 
     /*
-    Has to be called before the service is explicitly stopped since no method is called when it's stopped and bounded at the same time
+    Has to be called before the service is explicitly stopped (but not unbound) since no method is called when it's stopped and bounded at the same time
      */
     void disconnectWebSocket() {
         this.ws.disconnect();
+    }
+
+    public void clipIsSetByServer(String text) {
+        addItemToClipboardHistory(text);
     }
 
     public class LocalBinder extends Binder {
         ConnectionService getService() {
             return ConnectionService.this;
         }
+    }
+
+    private class ClipboardListener implements ClipboardManager.OnPrimaryClipChangedListener {
+
+        private final ConnectionService service;
+
+        ClipboardListener(ConnectionService service) {
+            this.service = service;
+        }
+
+        @Override
+        public void onPrimaryClipChanged() {
+            System.out.println("ConnectionService: Clipboard changed");
+            ClipData clip = clipboardManager.getPrimaryClip();
+            CharSequence label = null;
+            if(clip != null) {
+                label = clip.getDescription().getLabel();
+                CharSequence item = clip
+                        .getItemAt(0)
+                        .getText();
+                if(item != null) {
+                    String text = item.toString();
+                    boolean fromServer = false;
+                    if(label != null) {
+                        fromServer = label.toString().equals(getString(R.string.clipboard_item_from_server));
+                    }
+                    if(!fromServer && service.isConnected.getValue()) {
+                        this.service.sendTextMessage(text);
+                        service.addItemToClipboardHistory(text);
+                    }
+                }
+            }
+        }
+    }
+
+    public void addItemToClipboardHistory(String text) {
+        System.out.println("ConnectionService: addItemToClipboardHistory()");
+        SharedPrefManager.addItem(
+                getString(R.string.clipboard_history_items),
+                text,
+                this,
+                getString(R.string.preferences_file_key_history)
+        );
+        message.postValue(new Message("text", text));
     }
 }
