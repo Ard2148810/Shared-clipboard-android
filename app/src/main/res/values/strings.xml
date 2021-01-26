@@ -46,5 +46,6 @@
     <string name="clipboard_history_items">clipboard_history_items</string>
     <string name="preferences_file_key_history">SharedClipboard_PREFERENCES_FILE_KEY_HISTORY</string>
     <string name="clipboard_item_from_server">Shared Clipboard | From server</string>
+    <string name="clipboard_item_from_history">Shared Clipboard | From history</string>
 
 </resources>

@@ -48,10 +48,6 @@ public class MainActivity extends AppCompatActivity  {
         status = findViewById(R.id.status_value);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show());
-
         findViewById(R.id.btn_connection).setOnClickListener(view1 -> {
             Intent intent = new Intent(view1.getContext(), ConnectionActivity.class);
             startActivity(intent);
@@ -97,6 +93,7 @@ public class MainActivity extends AppCompatActivity  {
         }
         this.clipboardHistoryAdapter.setHistoryItems(this.clipboardHistoryList);
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

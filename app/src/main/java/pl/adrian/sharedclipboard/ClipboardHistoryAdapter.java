@@ -1,6 +1,8 @@
 package pl.adrian.sharedclipboard;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,10 +19,12 @@ import java.util.List;
 
 public class ClipboardHistoryAdapter extends RecyclerView.Adapter<ClipboardHistoryAdapter.ViewHolder> {
     private List<String> historyItems;
-    private MainActivity activity;
+    private final MainActivity activity;
+    ClipboardManager clipboardManager;
 
     public ClipboardHistoryAdapter(MainActivity activity) {
         this.activity = activity;
+        this.clipboardManager = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
     }
 
     @NonNull
@@ -37,6 +41,7 @@ public class ClipboardHistoryAdapter extends RecyclerView.Adapter<ClipboardHisto
         holder.container.setOnClickListener(view -> {
             Context context = view.getContext().getApplicationContext();
             Toast.makeText(context, item, Toast.LENGTH_SHORT).show();
+            saveTextToClipboard(item);
         });
         holder.itemBtn.setOnClickListener(view -> {
             activity.removeItemFromClipboardHistory(position);
@@ -51,6 +56,11 @@ public class ClipboardHistoryAdapter extends RecyclerView.Adapter<ClipboardHisto
     @Override
     public int getItemCount() {
         return historyItems.size();
+    }
+
+    public void saveTextToClipboard(String text) {
+        ClipData clip = ClipData.newPlainText(activity.getString(R.string.clipboard_item_from_history), text);
+        clipboardManager.setPrimaryClip(clip);
     }
 
 

@@ -28,6 +28,7 @@ import java.io.IOException;
 public class ConnectionService extends Service {
 
     private static final int NOTIFICATION_ID = 123;
+    final int WEBSOCKET_TIMEOUT = 8000;
     private static final String CHANNEL_ID = "ChannelID";
     MutableLiveData<Boolean> isConnected = new MutableLiveData<>(false);
     MutableLiveData<Message> message = new MutableLiveData<>();
@@ -92,7 +93,7 @@ public class ConnectionService extends Service {
     private void initWebSocket() {
         try {
             this.ws = new WebSocketFactory()
-                    .setConnectionTimeout(8000)
+                    .setConnectionTimeout(WEBSOCKET_TIMEOUT)
                     .createSocket("ws://192.168.8.125:5001")
                     .addListener(new WebSocketConnectionAdapter(this))
                     .connectAsynchronously();
