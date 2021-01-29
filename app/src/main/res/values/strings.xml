@@ -40,7 +40,8 @@
     <string name="ws_connecting">Connecting…</string>
     <string name="ws_disconnected">Disconnected</string>
     <string name="ws_paused">Paused</string>
-    <string name="btn_connection">CLICK</string>
+    <string name="btn_connect">Connect</string>
+    <string name="btn_disconnect">Disconnect</string>
     <string name="status">Status:</string>
     <string name="room_id">Room ID</string>
     <string name="clipboard_history_items">clipboard_history_items</string>

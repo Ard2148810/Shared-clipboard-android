@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity  {
     private ConnectionService connectionService;
 
     private TextView status;
+    private TextView roomId;
 
     private boolean isBound = false;
 
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity  {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         status = findViewById(R.id.status_value);
+        roomId = findViewById(R.id.room_id_value);
         setSupportActionBar(toolbar);
 
         findViewById(R.id.btn_connection).setOnClickListener(view1 -> {
@@ -147,12 +149,20 @@ public class MainActivity extends AppCompatActivity  {
         updateClipboardHistory();
     }
 
+    private void onRoomIdChanged(String roomId) {
+        this.roomId.setText(roomId);
+    }
+
     public void getStatus() {
         connectionService.isConnected.observe(this, this::setConnectionStatus);
     }
 
     private void getMessage() {
         connectionService.message.observe(this, this::onMessageChanged);
+    }
+
+    private void getRoomId() {
+        connectionService.roomId.observe(this, this::onRoomIdChanged);
     }
 
     private ServiceConnection serviceHandler = new ServiceConnection() {
@@ -164,6 +174,7 @@ public class MainActivity extends AppCompatActivity  {
             isBound = true;
             getStatus();
             getMessage();
+            getRoomId();
         }
 
         @Override

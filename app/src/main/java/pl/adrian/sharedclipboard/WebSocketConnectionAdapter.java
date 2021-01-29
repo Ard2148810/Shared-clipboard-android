@@ -33,8 +33,12 @@ public class WebSocketConnectionAdapter extends WebSocketAdapter {
                 Log.DEBUG,
                 "WebSocket",
                 "Message: " + text + " | ws: " + websocket.toString());
-
-        saveTextToClipboard(readTextMessage(text));
+        Message msg = readTextMessage(text);
+        if(msg.getType().equals("room-id")) {
+            service.setRoomId(msg.getContent());
+        } else {
+            saveTextToClipboard(msg.getContent());
+        }
     }
 
     @Override
@@ -61,15 +65,14 @@ public class WebSocketConnectionAdapter extends WebSocketAdapter {
 
     @Override
     public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
+        super.onDisconnected(websocket, serverCloseFrame, clientCloseFrame, closedByServer);
         System.out.println("WebSocketConnectionAdapter: onDisconnected()");
         service.setConnectionStatus(false);
-        super.onDisconnected(websocket, serverCloseFrame, clientCloseFrame, closedByServer);
+        service.setRoomId("");
     }
 
-    public String readTextMessage(String json) {
-        Gson gson = new Gson();
-        Message msg = gson.fromJson(json, Message.class);
-        return msg.getContent();
+    public Message readTextMessage(String json) {
+        return new Gson().fromJson(json, Message.class);
     }
 
     public void saveTextToClipboard(String text) {

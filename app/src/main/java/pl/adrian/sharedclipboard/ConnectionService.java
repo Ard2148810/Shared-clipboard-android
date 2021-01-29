@@ -32,6 +32,7 @@ public class ConnectionService extends Service {
     private static final String CHANNEL_ID = "ChannelID";
     MutableLiveData<Boolean> isConnected = new MutableLiveData<>(false);
     MutableLiveData<Message> message = new MutableLiveData<>();
+    MutableLiveData<String> roomId = new MutableLiveData<>();
     private final IBinder binder = new LocalBinder();
     private ClipboardManager clipboardManager;
     private ClipboardListener listener;
@@ -94,7 +95,7 @@ public class ConnectionService extends Service {
         try {
             this.ws = new WebSocketFactory()
                     .setConnectionTimeout(WEBSOCKET_TIMEOUT)
-                    .createSocket("ws://192.168.8.125:5001")
+                    .createSocket("ws://192.168.8.131:5001")
                     .addListener(new WebSocketConnectionAdapter(this))
                     .connectAsynchronously();
         } catch (IOException e) {
@@ -159,6 +160,10 @@ public class ConnectionService extends Service {
 
     public void clipIsSetByServer(String text) {
         addItemToClipboardHistory(text);
+    }
+
+    public void setRoomId(String content) {
+        this.roomId.postValue(content);
     }
 
     public class LocalBinder extends Binder {

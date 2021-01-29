@@ -37,6 +37,7 @@ public class ConnectionActivity extends AppCompatActivity {
 
         this.btnConnect.setOnClickListener(listener -> {
             if(connectionService != null) {
+                btnConnect.setEnabled(false);
                 Intent intent = new Intent(this, ConnectionService.class);
                 if(!isConnected) {
                     System.out.println("ConnectionActivity: starting service...");
@@ -72,10 +73,13 @@ public class ConnectionActivity extends AppCompatActivity {
     private void setConnectionStatus(boolean value) {
         System.out.println("Setting connection status to: " + value);
         this.isConnected = value;
+        this.btnConnect.setEnabled(true);
         if(value) {
             this.statusValue.setText(R.string.ws_connected);
+            this.btnConnect.setText(R.string.btn_disconnect);
         } else {
             this.statusValue.setText(R.string.ws_disconnected);
+            this.btnConnect.setText(R.string.btn_connect);
         }
     }
 
