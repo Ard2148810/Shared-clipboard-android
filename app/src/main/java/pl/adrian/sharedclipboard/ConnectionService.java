@@ -11,11 +11,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.lifecycle.MutableLiveData;
 
@@ -36,6 +33,7 @@ public class ConnectionService extends Service {
     private final IBinder binder = new LocalBinder();
     private ClipboardManager clipboardManager;
     private ClipboardListener listener;
+    private String requestedRoomId = "";
 
     private WebSocket ws;
 
@@ -95,9 +93,12 @@ public class ConnectionService extends Service {
         try {
             this.ws = new WebSocketFactory()
                     .setConnectionTimeout(WEBSOCKET_TIMEOUT)
-                    .createSocket("ws://192.168.8.131:5001")
-                    .addListener(new WebSocketConnectionAdapter(this))
-                    .connectAsynchronously();
+                    .createSocket(getString(R.string.SERVER_ADDRESS))
+                    .addListener(new WebSocketConnectionAdapter(this));
+            if(!requestedRoomId.isEmpty()) {
+                this.ws.addProtocol(this.requestedRoomId);
+            }
+            this.ws.connectAsynchronously();
         } catch (IOException e) {
             Log.e("WebSocket:CS", e.getMessage());
             e.printStackTrace();
@@ -110,6 +111,10 @@ public class ConnectionService extends Service {
         if(isConnected.getValue()) {
             this.ws.sendText(jsonMsg);
         }
+    }
+
+    public void setRequestedRoomId(String id) {
+        this.requestedRoomId = id;
     }
 
 
@@ -130,7 +135,7 @@ public class ConnectionService extends Service {
             notification = new Notification.Builder(this, CHANNEL_ID)
                     .setContentTitle(getText(R.string.notification_t))
                     .setContentText(text)
-                    .setSmallIcon(R.drawable.baseline_settings_24)
+                    .setSmallIcon(R.drawable.ic_baseline_content_paste_24)
                     .setContentIntent(pendingIntent)
                     .setTicker(getText(R.string.ticker_text))
                     .build();

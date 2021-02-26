@@ -22,6 +22,8 @@ public class WebSocketConnectionAdapter extends WebSocketAdapter {
     ConnectionService service;
     ClipboardManager clipboardManager;
 
+    final int INCORRECT_ROOM_ID = 4001;
+
     WebSocketConnectionAdapter(ConnectionService service) {
         this.service = service;
         this.clipboardManager = (ClipboardManager) service.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -67,6 +69,12 @@ public class WebSocketConnectionAdapter extends WebSocketAdapter {
     public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
         super.onDisconnected(websocket, serverCloseFrame, clientCloseFrame, closedByServer);
         System.out.println("WebSocketConnectionAdapter: onDisconnected()");
+
+        if(serverCloseFrame.getCloseCode() == INCORRECT_ROOM_ID) {
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.post(() -> Toast.makeText(service.getApplicationContext(), serverCloseFrame.getCloseReason(), Toast.LENGTH_SHORT).show());
+        }
+
         service.setConnectionStatus(false);
         service.setRoomId("");
     }

@@ -10,6 +10,7 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import pl.adrian.sharedclipboard.ConnectionService.LocalBinder;
@@ -19,6 +20,8 @@ public class ConnectionActivity extends AppCompatActivity {
 
     Button btnConnect;
     TextView statusValue;
+    EditText inputRoomId;
+    TextView displayRoomId;
 
     boolean isBound = false;
     boolean isConnected = false;
@@ -27,12 +30,13 @@ public class ConnectionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         System.out.println("ConnectionActivity: onCreate()");
 
         setContentView(R.layout.activity_connection);
         this.btnConnect = findViewById(R.id.btn_connect);
         this.statusValue = findViewById(R.id.connection_state);
+        this.inputRoomId = findViewById(R.id.input_room_id);
+        this.displayRoomId = findViewById(R.id.connection_room_id);
 
 
         this.btnConnect.setOnClickListener(listener -> {
@@ -41,6 +45,7 @@ public class ConnectionActivity extends AppCompatActivity {
                 Intent intent = new Intent(this, ConnectionService.class);
                 if(!isConnected) {
                     System.out.println("ConnectionActivity: starting service...");
+                    this.connectionService.setRequestedRoomId(this.inputRoomId.getText().toString());
                     startService(intent);
                     this.statusValue.setText(R.string.ws_connecting);
                 } else {
@@ -77,9 +82,11 @@ public class ConnectionActivity extends AppCompatActivity {
         if(value) {
             this.statusValue.setText(R.string.ws_connected);
             this.btnConnect.setText(R.string.btn_disconnect);
+            this.inputRoomId.setEnabled(false);
         } else {
             this.statusValue.setText(R.string.ws_disconnected);
             this.btnConnect.setText(R.string.btn_connect);
+            this.inputRoomId.setEnabled(true);
         }
     }
 
@@ -103,6 +110,14 @@ public class ConnectionActivity extends AppCompatActivity {
         connectionService.isConnected.observe(this, this::setConnectionStatus);
     }
 
+    private void onRoomIdChanged(String roomId) {
+        this.displayRoomId.setText(roomId);
+    }
+
+    private void getRoomId() {
+        connectionService.roomId.observe(this, this::onRoomIdChanged);
+    }
+
     private ServiceConnection serviceHandler = new ServiceConnection() {
 
         @Override
@@ -111,6 +126,7 @@ public class ConnectionActivity extends AppCompatActivity {
             connectionService = binder.getService();
             isBound = true;
             getStatus();
+            getRoomId();
         }
 
         @Override
